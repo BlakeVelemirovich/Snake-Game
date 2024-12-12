@@ -1,17 +1,8 @@
-package org.example;/*
-    Blake Velemirovich
-    2024-11-12
-    Snake
-    org.example    
-*/
+package org.example;
 
 import java.awt.*;
 import java.awt.event.*;
 import javax.swing.*;
-import java.util.Random;
-
-import javax.swing.JPanel;
-
 
 public class GamePanel extends JPanel implements ActionListener {
 
@@ -24,23 +15,23 @@ public class GamePanel extends JPanel implements ActionListener {
     final int y[] = new int[GAME_UNITS];
     int bodyParts = 6;
     int applesEaten;
-    int appleX;
-    int appleY;
     char direction = 'R';
     boolean running = false;
     Timer timer;
-    Random random;
+    AppleSeed apple;
+    AppleSeed poisonApple;
 
     GamePanel() {
-        random = new Random();
         this.setPreferredSize(new Dimension(SCREEN_WIDTH, SCREEN_HEIGHT));
         this.setBackground(Color.black);
         this.setFocusable(true);
         this.addKeyListener(new MyKeyAdapter());
         startGame();
     }
+
     public void startGame() {
-        newApple();
+        apple = new Apple(UNIT_SIZE, SCREEN_WIDTH, SCREEN_HEIGHT);
+        poisonApple = new PoisonApple(UNIT_SIZE, SCREEN_WIDTH, SCREEN_HEIGHT);
         running = true;
         timer = new Timer(DELAY, this);
         timer.start();
@@ -53,12 +44,11 @@ public class GamePanel extends JPanel implements ActionListener {
 
     public void draw(Graphics g) {
         if (running) {
-//            for (int i = 0; i < SCREEN_HEIGHT / UNIT_SIZE; i++) {
-//                g.drawLine(i * UNIT_SIZE, 0, i * UNIT_SIZE, SCREEN_HEIGHT);
-//                g.drawLine(0, i * UNIT_SIZE, SCREEN_WIDTH, i * UNIT_SIZE);
-//            }
             g.setColor(Color.red);
-            g.fillOval(appleX, appleY, UNIT_SIZE, UNIT_SIZE);
+            g.fillOval(apple.getX(), apple.getY(), UNIT_SIZE, UNIT_SIZE);
+
+            g.setColor(Color.blue);
+            g.fillOval(poisonApple.getX(), poisonApple.getY(), UNIT_SIZE, UNIT_SIZE);
 
             for (int i = 0; i < bodyParts; i++) {
                 if (i == 0) {
@@ -77,12 +67,6 @@ public class GamePanel extends JPanel implements ActionListener {
         } else {
             gameOver(g);
         }
-
-    }
-
-    public void newApple() {
-        appleX= random.nextInt((int) (SCREEN_WIDTH / UNIT_SIZE)) * UNIT_SIZE;
-        appleY = random.nextInt((int) (SCREEN_HEIGHT / UNIT_SIZE)) * UNIT_SIZE;
     }
 
     public void move() {
@@ -108,12 +92,18 @@ public class GamePanel extends JPanel implements ActionListener {
     }
 
     public void checkApple() {
-        if((x[0] == appleX) && (y[0] == appleY)) {
+        if((x[0] == apple.getX()) && (y[0] == apple.getY())) {
             bodyParts++;
             applesEaten++;
-            newApple();
+            apple.generateNewPosition();
+            poisonApple.generateNewPosition();
         }
+    }
 
+    public void checkPoisonApple() {
+        if((x[0] == poisonApple.getX()) && (y[0] == poisonApple.getY())) {
+            running = false;
+        }
     }
 
     public void checkCollisions() {
@@ -160,10 +150,10 @@ public class GamePanel extends JPanel implements ActionListener {
 
     @Override
     public void actionPerformed(ActionEvent e) {
-
         if (running) {
             move();
             checkApple();
+            checkPoisonApple();
             checkCollisions();
         }
         repaint();
